@@ -1,0 +1,46 @@
+# Return Value Mutation Configuration Example
+
+mutations:
+  # Example 1: Return null instead of object
+  - type: return
+    target:
+      className: io.chaosmesh.examples.SimpleCalculator
+      methodName: getSuccessMessage
+    mutation:
+      strategy: null
+
+  # Example 2: Return zero for numeric methods
+  - type: return
+    target:
+      className: io.chaosmesh.examples.SimpleCalculator
+      methodName: multiply
+    mutation:
+      strategy: zero
+
+  # Example 3: Return false for boolean methods
+  - type: return
+    target:
+      className: io.chaosmesh.examples.SimpleCalculator
+      methodName: isValid
+    mutation:
+      strategy: false
+
+  # Example 4: Return empty string
+  - type: return
+    target:
+      className: io.chaosmesh.examples.SimpleCalculator
+      methodName: getErrorMessage
+    mutation:
+      strategy: empty
+
+  # Example 5: Return custom value
+  - type: return
+    target:
+      className: io.chaosmesh.examples.SimpleCalculator
+      methodName: add
+    mutation:
+      strategy: custom
+      value: "999"
+
+controlServerPort: 9090
+enabled: true

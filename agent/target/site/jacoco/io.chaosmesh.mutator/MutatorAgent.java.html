@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MutatorAgent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mutator-agent</a> &gt; <a href="index.source.html" class="el_package">io.chaosmesh.mutator</a> &gt; <span class="el_source">MutatorAgent.java</span></div><h1>MutatorAgent.java</h1><pre class="source lang-java linenums">package io.chaosmesh.mutator;
+
+import java.lang.instrument.Instrumentation;
+import java.lang.instrument.UnmodifiableClassException;
+import java.util.logging.Logger;
+
+/**
+ * Java agent entry point for runtime mutation.
+ * Supports both premain (startup) and agentmain (dynamic attachment) modes.
+ */
+<span class="nc" id="L11">public class MutatorAgent {</span>
+<span class="nc" id="L12">    private static final Logger logger = Logger.getLogger(MutatorAgent.class.getName());</span>
+    private static MutationManager mutationManager;
+
+    /**
+     * Premain entry point - called during JVM startup with -javaagent flag
+     */
+    public static void premain(String agentArgs, Instrumentation inst) {
+<span class="nc" id="L19">        logger.info(&quot;MutatorAgent starting in premain mode&quot;);</span>
+<span class="nc" id="L20">        initialize(agentArgs, inst);</span>
+<span class="nc" id="L21">    }</span>
+
+    /**
+     * Agentmain entry point - called when agent is dynamically attached
+     */
+    public static void agentmain(String agentArgs, Instrumentation inst) {
+<span class="nc" id="L27">        logger.info(&quot;MutatorAgent starting in agentmain mode&quot;);</span>
+<span class="nc" id="L28">        initialize(agentArgs, inst);</span>
+<span class="nc" id="L29">    }</span>
+
+    private static void initialize(String agentArgs, Instrumentation inst) {
+        try {
+            // Parse agent arguments
+<span class="nc" id="L34">            MutationConfig config = MutationConfig.parse(agentArgs);</span>
+<span class="nc" id="L35">            logger.info(&quot;Loaded mutation config: &quot; + config);</span>
+
+            // Initialize mutation manager
+<span class="nc" id="L38">            mutationManager = new MutationManager(inst, config);</span>
+
+            // Register transformer first (critical)
+<span class="nc" id="L41">            inst.addTransformer(mutationManager.getTransformer(), true);</span>
+<span class="nc" id="L42">            logger.info(&quot;Bytecode transformer registered successfully&quot;);</span>
+
+            // Start control server (optional - don't fail if it can't start)
+            try {
+<span class="nc" id="L46">                ControlServer controlServer = new ControlServer(mutationManager);</span>
+<span class="nc" id="L47">                controlServer.start();</span>
+<span class="nc" id="L48">                logger.info(&quot;Control server started on port &quot; + controlServer.getPort());</span>
+<span class="nc" id="L49">            } catch (Exception e) {</span>
+<span class="nc" id="L50">                logger.warning(&quot;Failed to start control server: &quot; + e.getMessage());</span>
+<span class="nc" id="L51">                logger.info(&quot;Continuing without control server - mutations will still work&quot;);</span>
+<span class="nc" id="L52">            }</span>
+
+<span class="nc" id="L54">            logger.info(&quot;MutatorAgent initialized successfully&quot;);</span>
+
+<span class="nc" id="L56">        } catch (Exception e) {</span>
+<span class="nc" id="L57">            logger.severe(&quot;Failed to initialize MutatorAgent: &quot; + e.getMessage());</span>
+<span class="nc" id="L58">            e.printStackTrace();</span>
+<span class="nc" id="L59">        }</span>
+<span class="nc" id="L60">    }</span>
+
+    public static MutationManager getMutationManager() {
+<span class="nc" id="L63">        return mutationManager;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

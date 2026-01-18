@@ -1,0 +1,13 @@
+# Simple Return Value Mutation Test - Only test multiply method
+
+mutations:
+  # Test: Return zero for numeric methods
+  - type: return
+    target:
+      className: io.chaosmesh.examples.SimpleCalculator
+      methodName: multiply
+    mutation:
+      strategy: zero
+
+controlServerPort: 9090
+enabled: true

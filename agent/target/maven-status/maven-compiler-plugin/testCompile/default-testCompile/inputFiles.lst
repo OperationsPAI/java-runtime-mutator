@@ -1,0 +1,17 @@
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/MutationConfigTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/MutationManagerTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/MutatorTransformerTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/ArrayCollectionMutatorTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/ConcurrencyMutatorTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/ConditionMutatorTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/ConstantMutatorTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/ExceptionMutatorTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/FieldValueMutatorTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/LoggingMutatorTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/LoopMutatorTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/MethodCallMutatorTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/NullPointerMutatorTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/OperatorMutatorTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/ResourceLeakMutatorTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/ReturnValueMutatorTest.java
+/home/nn/workspace/proj/java-runtime-mutator/agent/src/test/java/io/chaosmesh/mutator/transformer/TimingMutatorTest.java

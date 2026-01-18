@@ -1,0 +1,43 @@
+# Multi-location mutation configuration example
+
+mutations:
+  # Example 1: Single mutation applied to multiple targets
+  - type: constant
+    targets:
+      - className: io.chaosmesh.examples.SimpleCalculator
+        methodName: isValid
+      - className: io.chaosmesh.examples.SimpleCalculator
+        methodName: getMaxValue
+    mutation:
+      from: "100"
+      to: "0"
+
+  # Example 2: Wildcard matching for class names
+  - type: operator
+    target:
+      className: io.chaosmesh.examples.*
+      methodName: add
+    mutation:
+      strategy: add_to_sub
+
+  # Example 3: Wildcard matching for method names
+  - type: string
+    target:
+      className: io.chaosmesh.examples.SimpleCalculator
+      methodName: get*Message
+    mutation:
+      strategy: empty
+
+  # Example 4: Multiple targets with wildcards
+  - type: constant
+    targets:
+      - className: io.chaosmesh.examples.*Calculator
+        methodName: multiply
+      - className: io.chaosmesh.examples.*Calculator
+        methodName: divide
+    mutation:
+      from: "1"
+      to: "0"
+
+controlServerPort: 9090
+enabled: true

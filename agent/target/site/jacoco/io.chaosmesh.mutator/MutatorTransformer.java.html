@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MutatorTransformer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mutator-agent</a> &gt; <a href="index.source.html" class="el_package">io.chaosmesh.mutator</a> &gt; <span class="el_source">MutatorTransformer.java</span></div><h1>MutatorTransformer.java</h1><pre class="source lang-java linenums">package io.chaosmesh.mutator;
+
+import net.bytebuddy.agent.builder.AgentBuilder;
+import net.bytebuddy.asm.AsmVisitorWrapper;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.matcher.ElementMatcher;
+import net.bytebuddy.matcher.ElementMatchers;
+import net.bytebuddy.utility.JavaModule;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+
+import java.lang.instrument.ClassFileTransformer;
+import java.security.ProtectionDomain;
+import java.util.List;
+import java.util.logging.Logger;
+
+/**
+ * Bytecode transformer that applies mutations to target classes.
+ */
+public class MutatorTransformer implements ClassFileTransformer {
+<span class="fc" id="L23">    private static final Logger logger = Logger.getLogger(MutatorTransformer.class.getName());</span>
+
+    private final MutationManager mutationManager;
+
+<span class="fc" id="L27">    public MutatorTransformer(MutationManager mutationManager) {</span>
+<span class="fc" id="L28">        this.mutationManager = mutationManager;</span>
+<span class="fc" id="L29">    }</span>
+
+    @Override
+    public byte[] transform(ClassLoader loader, String className, Class&lt;?&gt; classBeingRedefined,
+                           ProtectionDomain protectionDomain, byte[] classfileBuffer) {
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (!mutationManager.isEnabled()) {</span>
+<span class="fc" id="L35">            return null;</span>
+        }
+
+        // Convert internal class name to standard format
+<span class="fc" id="L39">        String standardClassName = className.replace('/', '.');</span>
+
+        // Check if this class has any mutations by checking if any target's className pattern matches
+<span class="fc" id="L42">        boolean hasMutations = mutationManager.getAllMutationStates().stream()</span>
+<span class="fc" id="L43">                .anyMatch(state -&gt; {</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">                    for (MutationConfig.MutationRule.TargetInfo target : state.getRule().getAllTargets()) {</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">                        if (target.className != null) {</span>
+<span class="nc" id="L46">                            String regex = target.className</span>
+<span class="nc" id="L47">                                .replace(&quot;.&quot;, &quot;\\.&quot;)</span>
+<span class="nc" id="L48">                                .replace(&quot;*&quot;, &quot;.*&quot;)</span>
+<span class="nc" id="L49">                                .replace(&quot;?&quot;, &quot;.&quot;);</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                            if (standardClassName.matches(regex)) {</span>
+<span class="nc" id="L51">                                return true;</span>
+                            }
+                        }
+<span class="nc" id="L54">                    }</span>
+<span class="nc" id="L55">                    return false;</span>
+                });
+
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        if (!hasMutations) {</span>
+<span class="fc" id="L59">            return null;</span>
+        }
+
+        try {
+<span class="nc" id="L63">            logger.fine(&quot;Transforming class: &quot; + standardClassName);</span>
+
+            // Use ASM to transform the bytecode
+<span class="nc" id="L66">            org.objectweb.asm.ClassReader reader = new org.objectweb.asm.ClassReader(classfileBuffer);</span>
+<span class="nc" id="L67">            org.objectweb.asm.ClassWriter writer = new org.objectweb.asm.ClassWriter(reader, org.objectweb.asm.ClassWriter.COMPUTE_FRAMES);</span>
+
+<span class="nc" id="L69">            MutationClassVisitor visitor = new MutationClassVisitor(Opcodes.ASM9, writer, mutationManager, standardClassName);</span>
+<span class="nc" id="L70">            reader.accept(visitor, 0);</span>
+
+<span class="nc" id="L72">            return writer.toByteArray();</span>
+
+<span class="nc" id="L74">        } catch (Exception e) {</span>
+<span class="nc" id="L75">            logger.warning(&quot;Failed to transform class &quot; + standardClassName + &quot;: &quot; + e.getMessage());</span>
+<span class="nc" id="L76">            return null;</span>
+        }
+    }
+
+    /**
+     * ASM ClassVisitor for applying mutations.
+     */
+    private static class MutationClassVisitor extends ClassVisitor {
+        private final MutationManager mutationManager;
+        private final String className;
+
+        public MutationClassVisitor(int api, ClassVisitor cv, MutationManager mutationManager, String className) {
+<span class="nc" id="L88">            super(api, cv);</span>
+<span class="nc" id="L89">            this.mutationManager = mutationManager;</span>
+<span class="nc" id="L90">            this.className = className;</span>
+<span class="nc" id="L91">        }</span>
+
+        @Override
+        public MethodVisitor visitMethod(int access, String name, String descriptor,
+                                        String signature, String[] exceptions) {
+<span class="nc" id="L96">            MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);</span>
+
+            // Check if this method has mutations
+<span class="nc" id="L99">            List&lt;MutationManager.MutationState&gt; states = mutationManager.getMutationStates(className, name);</span>
+
+            // Apply all matching mutations (chain them)
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            for (MutationManager.MutationState state : states) {</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                if (state.isActive()) {</span>
+<span class="nc" id="L104">                    logger.fine(&quot;Applying mutation to method: &quot; + className + &quot;.&quot; + name);</span>
+
+<span class="nc" id="L106">                    MutationConfig.MutationRule rule = state.getRule();</span>
+
+                    // Apply appropriate mutator based on type
+<span class="nc bnc" id="L109" title="All 4 branches missed.">                    if (&quot;constant&quot;.equals(rule.type) || &quot;string&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L110">                        String mutationType = (String) rule.mutation.getOrDefault(&quot;strategy&quot;, &quot;zero&quot;);</span>
+<span class="nc" id="L111">                        Object from = rule.mutation.get(&quot;from&quot;);</span>
+<span class="nc" id="L112">                        Object to = rule.mutation.get(&quot;to&quot;);</span>
+<span class="nc" id="L113">                        mv = new io.chaosmesh.mutator.transformer.ConstantMutator(Opcodes.ASM9, mv, mutationType, from, to);</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">                    } else if (&quot;operator&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L115">                        String mutationType = (String) rule.mutation.getOrDefault(&quot;strategy&quot;, &quot;add_to_sub&quot;);</span>
+<span class="nc" id="L116">                        mv = new io.chaosmesh.mutator.transformer.OperatorMutator(Opcodes.ASM9, mv, mutationType);</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                    } else if (&quot;return&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L118">                        String mutationType = (String) rule.mutation.getOrDefault(&quot;strategy&quot;, &quot;null&quot;);</span>
+<span class="nc" id="L119">                        Object customValue = rule.mutation.get(&quot;value&quot;);</span>
+<span class="nc" id="L120">                        mv = new io.chaosmesh.mutator.transformer.ReturnValueMutator(Opcodes.ASM9, mv, mutationType, customValue, descriptor);</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">                    } else if (&quot;method_call&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L122">                        String strategy = (String) rule.mutation.getOrDefault(&quot;strategy&quot;, &quot;skip&quot;);</span>
+<span class="nc" id="L123">                        String targetMethod = (String) rule.mutation.get(&quot;target_method&quot;);</span>
+<span class="nc" id="L124">                        mv = new io.chaosmesh.mutator.transformer.MethodCallMutator(Opcodes.ASM9, mv, strategy, targetMethod);</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                    } else if (&quot;condition&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L126">                        String strategy = (String) rule.mutation.getOrDefault(&quot;strategy&quot;, &quot;negate&quot;);</span>
+<span class="nc" id="L127">                        mv = new io.chaosmesh.mutator.transformer.ConditionMutator(Opcodes.ASM9, mv, strategy);</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                    } else if (&quot;field_value&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L129">                        String strategy = (String) rule.mutation.getOrDefault(&quot;strategy&quot;, &quot;null&quot;);</span>
+<span class="nc" id="L130">                        String targetField = (String) rule.mutation.get(&quot;target_field&quot;);</span>
+<span class="nc" id="L131">                        mv = new io.chaosmesh.mutator.transformer.FieldValueMutator(Opcodes.ASM9, mv, strategy, targetField);</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">                    } else if (&quot;timing&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L133">                        Long delayMs = ((Number) rule.mutation.getOrDefault(&quot;delay_ms&quot;, 1000L)).longValue();</span>
+<span class="nc" id="L134">                        mv = new io.chaosmesh.mutator.transformer.TimingMutator(Opcodes.ASM9, mv, delayMs);</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">                    } else if (&quot;exception&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L136">                        String exceptionClass = (String) rule.mutation.getOrDefault(&quot;exception_class&quot;, &quot;java.lang.RuntimeException&quot;);</span>
+<span class="nc" id="L137">                        String message = (String) rule.mutation.get(&quot;message&quot;);</span>
+<span class="nc" id="L138">                        mv = new io.chaosmesh.mutator.transformer.ExceptionMutator(Opcodes.ASM9, mv, exceptionClass, message);</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">                    } else if (&quot;loop&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L140">                        String strategy = (String) rule.mutation.getOrDefault(&quot;strategy&quot;, &quot;skip_first&quot;);</span>
+<span class="nc" id="L141">                        mv = new io.chaosmesh.mutator.transformer.LoopMutator(Opcodes.ASM9, mv, strategy);</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                    } else if (&quot;concurrency&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L143">                        String strategy = (String) rule.mutation.getOrDefault(&quot;strategy&quot;, &quot;remove_sync&quot;);</span>
+<span class="nc" id="L144">                        mv = new io.chaosmesh.mutator.transformer.ConcurrencyMutator(Opcodes.ASM9, mv, strategy);</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">                    } else if (&quot;resource_leak&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L146">                        String strategy = (String) rule.mutation.getOrDefault(&quot;strategy&quot;, &quot;skip_close&quot;);</span>
+<span class="nc" id="L147">                        mv = new io.chaosmesh.mutator.transformer.ResourceLeakMutator(Opcodes.ASM9, mv, strategy);</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                    } else if (&quot;array_collection&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L149">                        String strategy = (String) rule.mutation.getOrDefault(&quot;strategy&quot;, &quot;empty&quot;);</span>
+<span class="nc" id="L150">                        mv = new io.chaosmesh.mutator.transformer.ArrayCollectionMutator(Opcodes.ASM9, mv, strategy);</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                    } else if (&quot;null_pointer&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L152">                        String strategy = (String) rule.mutation.getOrDefault(&quot;strategy&quot;, &quot;null_locals&quot;);</span>
+<span class="nc" id="L153">                        mv = new io.chaosmesh.mutator.transformer.NullPointerMutator(Opcodes.ASM9, mv, strategy);</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                    } else if (&quot;logging&quot;.equals(rule.type)) {</span>
+<span class="nc" id="L155">                        String strategy = (String) rule.mutation.getOrDefault(&quot;strategy&quot;, &quot;suppress&quot;);</span>
+<span class="nc" id="L156">                        mv = new io.chaosmesh.mutator.transformer.LoggingMutator(Opcodes.ASM9, mv, strategy);</span>
+                    }
+                }
+<span class="nc" id="L159">            }</span>
+
+<span class="nc" id="L161">            return mv;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

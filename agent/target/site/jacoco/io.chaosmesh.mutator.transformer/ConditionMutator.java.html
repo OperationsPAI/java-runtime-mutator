@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConditionMutator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mutator-agent</a> &gt; <a href="index.source.html" class="el_package">io.chaosmesh.mutator.transformer</a> &gt; <span class="el_source">ConditionMutator.java</span></div><h1>ConditionMutator.java</h1><pre class="source lang-java linenums">package io.chaosmesh.mutator.transformer;
+
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+
+/**
+ * Mutates conditional logic in bytecode (negate conditions, swap branches)
+ */
+public class ConditionMutator extends MethodVisitor {
+    private final String strategy;
+
+    public ConditionMutator(int api, MethodVisitor mv, String strategy) {
+<span class="fc" id="L13">        super(api, mv);</span>
+<span class="fc" id="L14">        this.strategy = strategy;</span>
+<span class="fc" id="L15">    }</span>
+
+    @Override
+    public void visitJumpInsn(int opcode, org.objectweb.asm.Label label) {
+<span class="fc bfc" id="L19" title="All 2 branches covered.">        if (strategy.equals(&quot;always_false&quot;)) {</span>
+<span class="fc" id="L20">            return;</span>
+        }
+<span class="fc" id="L22">        super.visitJumpInsn(mutateJump(opcode), label);</span>
+<span class="fc" id="L23">    }</span>
+
+    private int mutateJump(int opcode) {
+<span class="fc bfc" id="L26" title="All 3 branches covered.">        switch (strategy) {</span>
+            case &quot;negate&quot;:
+<span class="fc" id="L28">                return negateCondition(opcode);</span>
+            case &quot;always_true&quot;:
+<span class="fc" id="L30">                return Opcodes.GOTO;</span>
+            default:
+<span class="fc" id="L32">                return opcode;</span>
+        }
+    }
+
+    private int negateCondition(int opcode) {
+<span class="pc bpc" id="L37" title="7 of 17 branches missed.">        switch (opcode) {</span>
+<span class="fc" id="L38">            case Opcodes.IFEQ: return Opcodes.IFNE;</span>
+<span class="fc" id="L39">            case Opcodes.IFNE: return Opcodes.IFEQ;</span>
+<span class="fc" id="L40">            case Opcodes.IFLT: return Opcodes.IFGE;</span>
+<span class="fc" id="L41">            case Opcodes.IFGE: return Opcodes.IFLT;</span>
+<span class="fc" id="L42">            case Opcodes.IFGT: return Opcodes.IFLE;</span>
+<span class="fc" id="L43">            case Opcodes.IFLE: return Opcodes.IFGT;</span>
+<span class="fc" id="L44">            case Opcodes.IF_ICMPEQ: return Opcodes.IF_ICMPNE;</span>
+<span class="fc" id="L45">            case Opcodes.IF_ICMPNE: return Opcodes.IF_ICMPEQ;</span>
+<span class="nc" id="L46">            case Opcodes.IF_ICMPLT: return Opcodes.IF_ICMPGE;</span>
+<span class="nc" id="L47">            case Opcodes.IF_ICMPGE: return Opcodes.IF_ICMPLT;</span>
+<span class="nc" id="L48">            case Opcodes.IF_ICMPGT: return Opcodes.IF_ICMPLE;</span>
+<span class="nc" id="L49">            case Opcodes.IF_ICMPLE: return Opcodes.IF_ICMPGT;</span>
+<span class="nc" id="L50">            case Opcodes.IF_ACMPEQ: return Opcodes.IF_ACMPNE;</span>
+<span class="nc" id="L51">            case Opcodes.IF_ACMPNE: return Opcodes.IF_ACMPEQ;</span>
+<span class="fc" id="L52">            case Opcodes.IFNULL: return Opcodes.IFNONNULL;</span>
+<span class="fc" id="L53">            case Opcodes.IFNONNULL: return Opcodes.IFNULL;</span>
+<span class="nc" id="L54">            default: return opcode;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

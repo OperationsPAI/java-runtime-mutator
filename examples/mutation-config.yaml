@@ -1,0 +1,25 @@
+mutations:
+  - type: constant
+    target:
+      className: io.chaosmesh.examples.SimpleCalculator
+      methodName: isValid
+    mutation:
+      from: "100"
+      to: "0"
+
+  - type: operator
+    target:
+      className: io.chaosmesh.examples.SimpleCalculator
+      methodName: add
+    mutation:
+      strategy: add_to_sub
+
+  - type: string
+    target:
+      className: io.chaosmesh.examples.SimpleCalculator
+      methodName: getSuccessMessage
+    mutation:
+      strategy: empty
+
+controlServerPort: 9090
+enabled: true
