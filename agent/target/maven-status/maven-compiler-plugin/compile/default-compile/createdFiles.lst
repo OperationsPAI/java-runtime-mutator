@@ -18,11 +18,11 @@ io/chaosmesh/mutator/transformer/NullPointerMutator.class
 io/chaosmesh/mutator/AttachTool.class
 io/chaosmesh/mutator/MutatorAgent.class
 io/chaosmesh/mutator/transformer/OperatorMutator.class
-io/chaosmesh/mutator/transformer/ArrayCollectionMutator.class
 io/chaosmesh/mutator/transformer/ResourceLeakMutator.class
-io/chaosmesh/mutator/MutationManager$MutationState.class
+io/chaosmesh/mutator/transformer/ArrayCollectionMutator.class
 io/chaosmesh/mutator/MutatorTransformer$MutationClassVisitor.class
+io/chaosmesh/mutator/MutationManager$MutationState.class
 io/chaosmesh/mutator/ControlServer$EnableServlet.class
-io/chaosmesh/mutator/ControlServer.class
 io/chaosmesh/mutator/MutationConfig.class
+io/chaosmesh/mutator/ControlServer.class
 io/chaosmesh/mutator/ControlServer$StatusServlet.class

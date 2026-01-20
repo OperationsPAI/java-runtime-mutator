@@ -1,9 +1,9 @@
 io/chaosmesh/mutator/MutationManagerTest.class
 io/chaosmesh/mutator/transformer/TimingMutatorTest.class
 io/chaosmesh/mutator/transformer/OperatorMutatorTest.class
-io/chaosmesh/mutator/transformer/ArrayCollectionMutatorTest.class
-io/chaosmesh/mutator/transformer/FieldValueMutatorTest.class
 io/chaosmesh/mutator/transformer/ExceptionMutatorTest.class
+io/chaosmesh/mutator/transformer/FieldValueMutatorTest.class
+io/chaosmesh/mutator/transformer/ArrayCollectionMutatorTest.class
 io/chaosmesh/mutator/MutationConfigTest.class
 io/chaosmesh/mutator/transformer/ResourceLeakMutatorTest.class
 io/chaosmesh/mutator/transformer/MethodCallMutatorTest.class
