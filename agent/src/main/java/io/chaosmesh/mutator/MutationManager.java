@@ -112,6 +112,32 @@ public class MutationManager {
         retransformClass(className);
     }
 
+    /**
+     * Clear all mutations and retransform affected classes.
+     * This is used for recovery - disabling mutations completely.
+     */
+    public void clearAllMutations() {
+        // Collect affected class names before clearing
+        Set<String> affectedClasses = new java.util.HashSet<>();
+        for (MutationState state : mutationStates) {
+            for (MutationConfig.MutationRule.TargetInfo target : state.getRule().getAllTargets()) {
+                if (target.className != null && !target.className.contains("*") && !target.className.contains("?")) {
+                    affectedClasses.add(target.className);
+                }
+            }
+        }
+
+        // Clear all mutations
+        mutationStates.clear();
+        exactMatchCache.clear();
+        logger.info("Cleared all mutations");
+
+        // Retransform affected classes to restore original bytecode
+        for (String className : affectedClasses) {
+            retransformClass(className);
+        }
+    }
+
     private void retransformClass(String className) {
         try {
             String internalName = className.replace('.', '/');

@@ -83,6 +83,18 @@ public class MutationConfig {
             logger.info("Loaded config from file: " + configPath);
         }
 
+        // Handle runtime mutation arguments from chaos-daemon
+        // Format: mutator_action=constant,mutator_class=...,mutator_method=...,mutator_from=...,mutator_to=...
+        if (args.containsKey("mutator_action")) {
+            MutationRule rule = createRuleFromArgs(args);
+            if (rule != null) {
+                config.mutations.add(rule);
+                logger.info("Created mutation rule from args: type=" + rule.type +
+                    ", class=" + (rule.target != null ? rule.target.className : "null") +
+                    ", method=" + (rule.target != null ? rule.target.methodName : "null"));
+            }
+        }
+
         // Override with command-line arguments
         if (args.containsKey("port")) {
             config.controlServerPort = Integer.parseInt(args.get("port"));
@@ -92,6 +104,68 @@ public class MutationConfig {
         }
 
         return config;
+    }
+
+    /**
+     * Creates a MutationRule from chaos-daemon style arguments.
+     * Supports: mutator_action, mutator_class, mutator_method, mutator_from, mutator_to, mutator_strategy
+     */
+    private static MutationRule createRuleFromArgs(Map<String, String> args) {
+        String action = args.get("mutator_action");
+        String className = args.get("mutator_class");
+        String methodName = args.get("mutator_method");
+
+        if (action == null || className == null || methodName == null) {
+            logger.warning("Missing required arguments: mutator_action, mutator_class, mutator_method");
+            return null;
+        }
+
+        MutationRule rule = new MutationRule();
+        rule.type = action;
+
+        // Create target
+        MutationRule.TargetInfo target = new MutationRule.TargetInfo();
+        target.className = className;
+        target.methodName = methodName;
+        if (args.containsKey("mutator_signature")) {
+            target.methodDescriptor = args.get("mutator_signature");
+        }
+        rule.target = target;
+
+        // Create mutation config
+        rule.mutation = new HashMap<>();
+
+        switch (action) {
+            case "constant":
+                // Constant mutation requires from/to values
+                if (args.containsKey("mutator_from")) {
+                    rule.mutation.put("from", args.get("mutator_from"));
+                }
+                if (args.containsKey("mutator_to")) {
+                    rule.mutation.put("to", args.get("mutator_to"));
+                }
+                break;
+            case "operator":
+            case "string":
+                // Operator and string mutations use strategy
+                if (args.containsKey("mutator_strategy")) {
+                    rule.mutation.put("strategy", args.get("mutator_strategy"));
+                }
+                break;
+            case "return":
+                // Return mutation uses strategy and optional value
+                if (args.containsKey("mutator_strategy")) {
+                    rule.mutation.put("strategy", args.get("mutator_strategy"));
+                }
+                if (args.containsKey("mutator_value")) {
+                    rule.mutation.put("value", args.get("mutator_value"));
+                }
+                break;
+            default:
+                logger.warning("Unknown mutation action: " + action);
+        }
+
+        return rule;
     }
 
     private static MutationConfig loadFromFile(String path) throws IOException {

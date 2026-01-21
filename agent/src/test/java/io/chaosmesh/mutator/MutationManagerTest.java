@@ -325,4 +325,54 @@ class MutationManagerTest {
         List<MutationManager.MutationState> states = manager.getAllMutationStates();
         assertThat(states).hasSize(2);
     }
+
+    @Test
+    void testClearAllMutations() {
+        // Add multiple mutations
+        MutationConfig.MutationRule rule1 = new MutationConfig.MutationRule();
+        rule1.type = "constant";
+        MutationConfig.MutationRule.TargetInfo target1 = new MutationConfig.MutationRule.TargetInfo();
+        target1.className = "com.example.Calculator";
+        target1.methodName = "add";
+        rule1.target = target1;
+
+        MutationConfig.MutationRule rule2 = new MutationConfig.MutationRule();
+        rule2.type = "operator";
+        MutationConfig.MutationRule.TargetInfo target2 = new MutationConfig.MutationRule.TargetInfo();
+        target2.className = "com.example.Calculator";
+        target2.methodName = "multiply";
+        rule2.target = target2;
+
+        manager.addMutation(rule1);
+        manager.addMutation(rule2);
+        assertThat(manager.getAllMutationStates()).hasSize(2);
+
+        // Clear all mutations
+        manager.clearAllMutations();
+
+        // Verify all mutations are cleared
+        assertThat(manager.getAllMutationStates()).isEmpty();
+        assertThat(manager.getMutationStates("com.example.Calculator", "add")).isEmpty();
+        assertThat(manager.getMutationStates("com.example.Calculator", "multiply")).isEmpty();
+    }
+
+    @Test
+    void testClearAllMutationsWithWildcards() {
+        // Add mutation with wildcard pattern
+        MutationConfig.MutationRule rule = new MutationConfig.MutationRule();
+        rule.type = "constant";
+        MutationConfig.MutationRule.TargetInfo target = new MutationConfig.MutationRule.TargetInfo();
+        target.className = "com.example.*";
+        target.methodName = "*";
+        rule.target = target;
+
+        manager.addMutation(rule);
+        assertThat(manager.getAllMutationStates()).hasSize(1);
+
+        // Clear all mutations
+        manager.clearAllMutations();
+
+        // Verify all mutations are cleared
+        assertThat(manager.getAllMutationStates()).isEmpty();
+    }
 }

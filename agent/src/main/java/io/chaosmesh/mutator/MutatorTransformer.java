@@ -60,7 +60,7 @@ public class MutatorTransformer implements ClassFileTransformer {
         }
 
         try {
-            logger.fine("Transforming class: " + standardClassName);
+            logger.info("Transforming class: " + standardClassName + " (has mutations for this class)");
 
             // Use ASM to transform the bytecode
             org.objectweb.asm.ClassReader reader = new org.objectweb.asm.ClassReader(classfileBuffer);
@@ -69,6 +69,7 @@ public class MutatorTransformer implements ClassFileTransformer {
             MutationClassVisitor visitor = new MutationClassVisitor(Opcodes.ASM9, writer, mutationManager, standardClassName);
             reader.accept(visitor, 0);
 
+            logger.info("Transformation complete for class: " + standardClassName);
             return writer.toByteArray();
 
         } catch (Exception e) {
@@ -98,12 +99,15 @@ public class MutatorTransformer implements ClassFileTransformer {
             // Check if this method has mutations
             List<MutationManager.MutationState> states = mutationManager.getMutationStates(className, name);
 
+            logger.info("Checking method: " + className + "." + name + " - found " + states.size() + " mutation(s)");
+
             // Apply all matching mutations (chain them)
             for (MutationManager.MutationState state : states) {
                 if (state.isActive()) {
-                    logger.fine("Applying mutation to method: " + className + "." + name);
+                    logger.info("Applying mutation to method: " + className + "." + name);
 
                     MutationConfig.MutationRule rule = state.getRule();
+                    logger.info("Mutation type: " + rule.type + ", mutation config: " + rule.mutation);
 
                     // Apply appropriate mutator based on type
                     if ("constant".equals(rule.type) || "string".equals(rule.type)) {
@@ -113,6 +117,7 @@ public class MutatorTransformer implements ClassFileTransformer {
                         mv = new io.chaosmesh.mutator.transformer.ConstantMutator(Opcodes.ASM9, mv, mutationType, from, to);
                     } else if ("operator".equals(rule.type)) {
                         String mutationType = (String) rule.mutation.getOrDefault("strategy", "add_to_sub");
+                        logger.info("Operator mutation type: " + mutationType);
                         mv = new io.chaosmesh.mutator.transformer.OperatorMutator(Opcodes.ASM9, mv, mutationType);
                     } else if ("return".equals(rule.type)) {
                         String mutationType = (String) rule.mutation.getOrDefault("strategy", "null");
