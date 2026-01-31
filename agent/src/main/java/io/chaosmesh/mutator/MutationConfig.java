@@ -13,6 +13,7 @@ import java.util.logging.Logger;
  */
 public class MutationConfig {
     private static final Logger logger = Logger.getLogger(MutationConfig.class.getName());
+    private static final java.util.Random RANDOM = new java.util.Random();
 
     private List<MutationRule> mutations = new ArrayList<>();
     private int controlServerPort = 8080;
@@ -160,6 +161,14 @@ public class MutationConfig {
                 if (args.containsKey("mutator_value")) {
                     rule.mutation.put("value", args.get("mutator_value"));
                 }
+                // Pre-generate random value if strategy is random
+                if ("random".equals(args.get("mutator_strategy"))) {
+                    String returnTypeHint = args.get("mutator_return_type");
+                    Object randomValue = generateRandomValue(returnTypeHint);
+                    rule.mutation.put("randomValue", randomValue);
+                    logger.info("Generated random value for " + className + "." + methodName + ": " + randomValue +
+                        " (type: " + (randomValue != null ? randomValue.getClass().getSimpleName() : "null") + ")");
+                }
                 break;
             default:
                 logger.warning("Unknown mutation action: " + action);
@@ -170,7 +179,77 @@ public class MutationConfig {
 
     private static MutationConfig loadFromFile(String path) throws IOException {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        return mapper.readValue(new File(path), MutationConfig.class);
+        MutationConfig config = mapper.readValue(new File(path), MutationConfig.class);
+        // Pre-generate random values for random strategy mutations
+        resolveRandomValues(config);
+        return config;
+    }
+
+    /**
+     * Pre-generates random values for mutations with strategy=random.
+     * This ensures the random value is determined at config load time and logged,
+     * making it traceable and reproducible for debugging.
+     */
+    private static void resolveRandomValues(MutationConfig config) {
+        for (MutationRule rule : config.mutations) {
+            if ("return".equals(rule.type) && rule.mutation != null) {
+                String strategy = (String) rule.mutation.get("strategy");
+                if ("random".equals(strategy)) {
+                    // Generate random value based on return type hint or use generic approach
+                    String returnTypeHint = (String) rule.mutation.get("returnType");
+                    Object randomValue = generateRandomValue(returnTypeHint);
+                    rule.mutation.put("randomValue", randomValue);
+
+                    // Log the generated value for traceability
+                    String targetInfo = rule.target != null
+                        ? rule.target.className + "." + rule.target.methodName
+                        : (rule.targets != null && !rule.targets.isEmpty()
+                            ? rule.targets.get(0).className + "." + rule.targets.get(0).methodName + " (+" + (rule.targets.size() - 1) + " more)"
+                            : "unknown");
+                    logger.info("Generated random value for " + targetInfo + ": " + randomValue +
+                        " (type: " + (randomValue != null ? randomValue.getClass().getSimpleName() : "null") + ")");
+                }
+            }
+        }
+    }
+
+    /**
+     * Generates a random value based on the return type hint.
+     * If no hint is provided, generates values that can be used for multiple types.
+     */
+    private static Object generateRandomValue(String returnTypeHint) {
+        if (returnTypeHint == null) {
+            // Default: generate a map with all possible random values
+            // The mutator will pick the appropriate one based on actual return type
+            Map<String, Object> values = new HashMap<>();
+            values.put("int", RANDOM.nextInt());
+            values.put("long", RANDOM.nextLong());
+            values.put("float", RANDOM.nextFloat());
+            values.put("double", RANDOM.nextDouble());
+            values.put("string", java.util.UUID.randomUUID().toString());
+            return values;
+        }
+
+        switch (returnTypeHint.toLowerCase()) {
+            case "int":
+            case "integer":
+            case "short":
+            case "byte":
+            case "char":
+                return RANDOM.nextInt();
+            case "long":
+                return RANDOM.nextLong();
+            case "float":
+                return RANDOM.nextFloat();
+            case "double":
+                return RANDOM.nextDouble();
+            case "string":
+                return java.util.UUID.randomUUID().toString();
+            case "boolean":
+                return null; // Boolean uses XOR negation, no pre-generated value needed
+            default:
+                return null; // Objects return null
+        }
     }
 
     // Getters

@@ -122,7 +122,22 @@ public class MutatorTransformer implements ClassFileTransformer {
                     } else if ("return".equals(rule.type)) {
                         String mutationType = (String) rule.mutation.getOrDefault("strategy", "null");
                         Object customValue = rule.mutation.get("value");
-                        mv = new io.chaosmesh.mutator.transformer.ReturnValueMutator(Opcodes.ASM9, mv, mutationType, customValue, descriptor);
+                        Object randomValue = rule.mutation.get("randomValue");
+                        boolean mutateFields = Boolean.TRUE.equals(rule.mutation.get("mutateFields"));
+                        boolean recursive = Boolean.TRUE.equals(rule.mutation.get("recursive"));
+                        java.util.Set<String> excludeFields = null;
+                        Object excludeFieldsObj = rule.mutation.get("excludeFields");
+                        if (excludeFieldsObj instanceof java.util.List) {
+                            excludeFields = new java.util.HashSet<>();
+                            for (Object field : (java.util.List<?>) excludeFieldsObj) {
+                                if (field instanceof String) {
+                                    excludeFields.add((String) field);
+                                }
+                            }
+                        }
+                        mv = new io.chaosmesh.mutator.transformer.ReturnValueMutator(
+                            Opcodes.ASM9, mv, mutationType, customValue, descriptor,
+                            randomValue, mutateFields, recursive, excludeFields);
                     } else if ("method_call".equals(rule.type)) {
                         String strategy = (String) rule.mutation.getOrDefault("strategy", "skip");
                         String targetMethod = (String) rule.mutation.get("target_method");
