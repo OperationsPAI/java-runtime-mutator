@@ -6,13 +6,11 @@ import java.lang.instrument.UnmodifiableClassException;
 import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 /**
  * Manages mutation state and coordinates bytecode transformation.
  */
 public class MutationManager {
-    private static final Logger logger = Logger.getLogger(MutationManager.class.getName());
 
     private final Instrumentation instrumentation;
     private final MutationConfig config;
@@ -43,7 +41,7 @@ public class MutationManager {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-        logger.info("Mutations " + (enabled ? "enabled" : "disabled"));
+        System.out.println("Mutations " + (enabled ? "enabled" : "disabled"));
     }
 
     public MutationConfig getConfig() {
@@ -93,7 +91,7 @@ public class MutationManager {
     public void addMutation(MutationConfig.MutationRule rule) {
         mutationStates.add(new MutationState(rule));
         exactMatchCache.clear();
-        logger.info("Added mutation rule with " + rule.getAllTargets().size() + " target(s)");
+        System.out.println("Added mutation rule with " + rule.getAllTargets().size() + " target(s)");
 
         // Retransform affected classes
         for (MutationConfig.MutationRule.TargetInfo target : rule.getAllTargets()) {
@@ -106,7 +104,7 @@ public class MutationManager {
     public void removeMutation(String className, String methodName) {
         mutationStates.removeIf(state -> state.matches(className, methodName));
         exactMatchCache.clear();
-        logger.info("Removed mutation: " + className + "." + methodName);
+        System.out.println("Removed mutation: " + className + "." + methodName);
 
         // Retransform affected classes
         retransformClass(className);
@@ -130,7 +128,7 @@ public class MutationManager {
         // Clear all mutations
         mutationStates.clear();
         exactMatchCache.clear();
-        logger.info("Cleared all mutations");
+        System.out.println("Cleared all mutations");
 
         // Retransform affected classes to restore original bytecode
         for (String className : affectedClasses) {
@@ -145,13 +143,13 @@ public class MutationManager {
                 if (clazz.getName().equals(className)) {
                     if (instrumentation.isModifiableClass(clazz)) {
                         instrumentation.retransformClasses(clazz);
-                        logger.info("Retransformed class: " + className);
+                        System.out.println("Retransformed class: " + className);
                     }
                     break;
                 }
             }
         } catch (UnmodifiableClassException e) {
-            logger.warning("Cannot retransform class " + className + ": " + e.getMessage());
+            System.out.println("Cannot retransform class " + className + ": " + e.getMessage());
         }
     }
 

@@ -3,7 +3,6 @@ package io.chaosmesh.mutator;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * Java agent entry point for runtime mutation.
@@ -12,7 +11,6 @@ import java.util.logging.Logger;
  * Supports re-attachment with "enabled=false" to disable mutations without restart.
  */
 public class MutatorAgent {
-    private static final Logger logger = Logger.getLogger(MutatorAgent.class.getName());
     private static MutationManager mutationManager;
     private static Instrumentation globalInstrumentation;
     private static boolean initialized = false;
@@ -21,7 +19,7 @@ public class MutatorAgent {
      * Premain entry point - called during JVM startup with -javaagent flag
      */
     public static void premain(String agentArgs, Instrumentation inst) {
-        logger.info("MutatorAgent starting in premain mode");
+        System.out.println("MutatorAgent starting in premain mode");
         initialize(agentArgs, inst);
     }
 
@@ -29,7 +27,7 @@ public class MutatorAgent {
      * Agentmain entry point - called when agent is dynamically attached
      */
     public static void agentmain(String agentArgs, Instrumentation inst) {
-        logger.info("MutatorAgent starting in agentmain mode");
+        System.out.println("MutatorAgent starting in agentmain mode");
 
         // Check if this is a re-attachment for control purposes
         if (initialized && mutationManager != null) {
@@ -44,7 +42,7 @@ public class MutatorAgent {
      * This allows controlling the agent without needing curl or other tools.
      */
     private static void handleReattachment(String agentArgs) {
-        logger.info("Agent already initialized, handling re-attachment with args: " + agentArgs);
+        System.out.println("Agent already initialized, handling re-attachment with args: " + agentArgs);
 
         try {
             // Parse the arguments to check for control commands
@@ -54,13 +52,13 @@ public class MutatorAgent {
             if (args.containsKey("enabled")) {
                 boolean enabled = Boolean.parseBoolean(args.get("enabled"));
                 mutationManager.setEnabled(enabled);
-                logger.info("Re-attachment: mutations " + (enabled ? "enabled" : "disabled"));
+                System.out.println("Re-attachment: mutations " + (enabled ? "enabled" : "disabled"));
             }
 
             // Handle clear command - clear all mutations
             if (args.containsKey("clear") && Boolean.parseBoolean(args.get("clear"))) {
                 mutationManager.clearAllMutations();
-                logger.info("Re-attachment: all mutations cleared");
+                System.out.println("Re-attachment: all mutations cleared");
             }
 
             // Handle new mutation rules if provided
@@ -68,12 +66,12 @@ public class MutatorAgent {
                 MutationConfig config = MutationConfig.parse(agentArgs);
                 for (MutationConfig.MutationRule rule : config.getMutations()) {
                     mutationManager.addMutation(rule);
-                    logger.info("Re-attachment: added new mutation rule");
+                    System.out.println("Re-attachment: added new mutation rule");
                 }
             }
 
         } catch (Exception e) {
-            logger.warning("Failed to handle re-attachment: " + e.getMessage());
+            System.out.println("Failed to handle re-attachment: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -98,14 +96,14 @@ public class MutatorAgent {
 
             // Parse agent arguments
             MutationConfig config = MutationConfig.parse(agentArgs);
-            logger.info("Loaded mutation config: " + config);
+            System.out.println("Loaded mutation config: " + config);
 
             // Initialize mutation manager
             mutationManager = new MutationManager(inst, config);
 
             // Register transformer first (critical) - must support retransformation
             inst.addTransformer(mutationManager.getTransformer(), true);
-            logger.info("Bytecode transformer registered successfully");
+            System.out.println("Bytecode transformer registered successfully");
 
             // Retransform already-loaded classes that match mutation rules
             retransformTargetClasses(inst, config);
@@ -114,17 +112,17 @@ public class MutatorAgent {
             try {
                 ControlServer controlServer = new ControlServer(mutationManager);
                 controlServer.start();
-                logger.info("Control server started on port " + controlServer.getPort());
+                System.out.println("Control server started on port " + controlServer.getPort());
             } catch (Exception e) {
-                logger.warning("Failed to start control server: " + e.getMessage());
-                logger.info("Continuing without control server - mutations will still work");
+                System.out.println("Failed to start control server: " + e.getMessage());
+                System.out.println("Continuing without control server - mutations will still work");
             }
 
             initialized = true;
-            logger.info("MutatorAgent initialized successfully");
+            System.out.println("MutatorAgent initialized successfully");
 
         } catch (Exception e) {
-            logger.severe("Failed to initialize MutatorAgent: " + e.getMessage());
+            System.err.println("Failed to initialize MutatorAgent: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -147,11 +145,11 @@ public class MutatorAgent {
         }
 
         if (targetClassNames.isEmpty()) {
-            logger.info("No specific target classes to retransform");
+            System.out.println("No specific target classes to retransform");
             return;
         }
 
-        logger.info("Looking for " + targetClassNames.size() + " target class(es) to retransform");
+        System.out.println("Looking for " + targetClassNames.size() + " target class(es) to retransform");
 
         // Find and retransform matching loaded classes
         for (Class<?> clazz : inst.getAllLoadedClasses()) {
@@ -159,14 +157,14 @@ public class MutatorAgent {
             if (targetClassNames.contains(className)) {
                 if (inst.isModifiableClass(clazz)) {
                     try {
-                        logger.info("Retransforming already-loaded class: " + className);
+                        System.out.println("Retransforming already-loaded class: " + className);
                         inst.retransformClasses(clazz);
-                        logger.info("Successfully retransformed: " + className);
+                        System.out.println("Successfully retransformed: " + className);
                     } catch (UnmodifiableClassException e) {
-                        logger.warning("Failed to retransform class " + className + ": " + e.getMessage());
+                        System.out.println("Failed to retransform class " + className + ": " + e.getMessage());
                     }
                 } else {
-                    logger.warning("Class " + className + " is not modifiable");
+                    System.out.println("Class " + className + " is not modifiable");
                 }
             }
         }

@@ -6,13 +6,11 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * Configuration for mutation rules and behavior.
  */
 public class MutationConfig {
-    private static final Logger logger = Logger.getLogger(MutationConfig.class.getName());
     private static final java.util.Random RANDOM = new java.util.Random();
 
     private List<MutationRule> mutations = new ArrayList<>();
@@ -64,7 +62,7 @@ public class MutationConfig {
         MutationConfig config = new MutationConfig();
 
         if (agentArgs == null || agentArgs.isEmpty()) {
-            logger.info("No agent arguments provided, using default config");
+            System.out.println("No agent arguments provided, using default config");
             return config;
         }
 
@@ -81,7 +79,7 @@ public class MutationConfig {
         if (args.containsKey("config")) {
             String configPath = args.get("config");
             config = loadFromFile(configPath);
-            logger.info("Loaded config from file: " + configPath);
+            System.out.println("Loaded config from file: " + configPath);
         }
 
         // Handle runtime mutation arguments from chaos-daemon
@@ -90,7 +88,7 @@ public class MutationConfig {
             MutationRule rule = createRuleFromArgs(args);
             if (rule != null) {
                 config.mutations.add(rule);
-                logger.info("Created mutation rule from args: type=" + rule.type +
+                System.out.println("Created mutation rule from args: type=" + rule.type +
                     ", class=" + (rule.target != null ? rule.target.className : "null") +
                     ", method=" + (rule.target != null ? rule.target.methodName : "null"));
             }
@@ -117,7 +115,7 @@ public class MutationConfig {
         String methodName = args.get("mutator_method");
 
         if (action == null || className == null || methodName == null) {
-            logger.warning("Missing required arguments: mutator_action, mutator_class, mutator_method");
+            System.out.println("Missing required arguments: mutator_action, mutator_class, mutator_method");
             return null;
         }
 
@@ -166,12 +164,12 @@ public class MutationConfig {
                     String returnTypeHint = args.get("mutator_return_type");
                     Object randomValue = generateRandomValue(returnTypeHint);
                     rule.mutation.put("randomValue", randomValue);
-                    logger.info("Generated random value for " + className + "." + methodName + ": " + randomValue +
+                    System.out.println("Generated random value for " + className + "." + methodName + ": " + randomValue +
                         " (type: " + (randomValue != null ? randomValue.getClass().getSimpleName() : "null") + ")");
                 }
                 break;
             default:
-                logger.warning("Unknown mutation action: " + action);
+                System.out.println("Unknown mutation action: " + action);
         }
 
         return rule;
@@ -206,7 +204,7 @@ public class MutationConfig {
                         : (rule.targets != null && !rule.targets.isEmpty()
                             ? rule.targets.get(0).className + "." + rule.targets.get(0).methodName + " (+" + (rule.targets.size() - 1) + " more)"
                             : "unknown");
-                    logger.info("Generated random value for " + targetInfo + ": " + randomValue +
+                    System.out.println("Generated random value for " + targetInfo + ": " + randomValue +
                         " (type: " + (randomValue != null ? randomValue.getClass().getSimpleName() : "null") + ")");
                 }
             }

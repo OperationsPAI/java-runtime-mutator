@@ -3,14 +3,12 @@ package io.chaosmesh.mutator.runtime;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * Runtime helper for mutating object fields using reflection.
  * This class is called from mutated bytecode at runtime.
  */
 public class MutationHelper {
-    private static final Logger logger = Logger.getLogger(MutationHelper.class.getName());
 
     /**
      * Mutates the fields of an object using pre-generated random values.
@@ -34,7 +32,7 @@ public class MutationHelper {
         try {
             mutateFields(obj, values, recursive, excluded, new HashSet<>());
         } catch (Exception e) {
-            logger.warning("Failed to mutate object fields: " + e.getMessage());
+            System.out.println("Failed to mutate object fields: " + e.getMessage());
         }
 
         return obj;
@@ -83,7 +81,7 @@ public class MutationHelper {
             clazz = clazz.getSuperclass();
         }
 
-        logger.info(mutationLog.toString());
+        System.out.println(mutationLog.toString());
     }
 
     private static Object mutateFieldValue(Field field, Object originalValue,
