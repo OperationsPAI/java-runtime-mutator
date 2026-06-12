@@ -12,13 +12,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * HTTP control server for managing mutations at runtime.
  */
 public class ControlServer {
-    private static final Logger logger = Logger.getLogger(ControlServer.class.getName());
 
     private final MutationManager mutationManager;
     private final Server server;
@@ -53,12 +51,12 @@ public class ControlServer {
 
     public void start() throws Exception {
         server.start();
-        logger.info("Control server started on port " + port);
+        System.out.println("Control server started on port " + port);
     }
 
     public void stop() throws Exception {
         server.stop();
-        logger.info("Control server stopped");
+        System.out.println("Control server stopped");
     }
 
     public int getPort() {

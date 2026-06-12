@@ -14,13 +14,11 @@ import org.objectweb.asm.Opcodes;
 import java.lang.instrument.ClassFileTransformer;
 import java.security.ProtectionDomain;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Bytecode transformer that applies mutations to target classes.
  */
 public class MutatorTransformer implements ClassFileTransformer {
-    private static final Logger logger = Logger.getLogger(MutatorTransformer.class.getName());
 
     private final MutationManager mutationManager;
 
@@ -60,7 +58,7 @@ public class MutatorTransformer implements ClassFileTransformer {
         }
 
         try {
-            logger.info("Transforming class: " + standardClassName + " (has mutations for this class)");
+            System.out.println("Transforming class: " + standardClassName + " (has mutations for this class)");
 
             // Use ASM to transform the bytecode
             org.objectweb.asm.ClassReader reader = new org.objectweb.asm.ClassReader(classfileBuffer);
@@ -69,11 +67,11 @@ public class MutatorTransformer implements ClassFileTransformer {
             MutationClassVisitor visitor = new MutationClassVisitor(Opcodes.ASM9, writer, mutationManager, standardClassName);
             reader.accept(visitor, 0);
 
-            logger.info("Transformation complete for class: " + standardClassName);
+            System.out.println("Transformation complete for class: " + standardClassName);
             return writer.toByteArray();
 
         } catch (Exception e) {
-            logger.warning("Failed to transform class " + standardClassName + ": " + e.getMessage());
+            System.out.println("Failed to transform class " + standardClassName + ": " + e.getMessage());
             return null;
         }
     }
@@ -99,15 +97,15 @@ public class MutatorTransformer implements ClassFileTransformer {
             // Check if this method has mutations
             List<MutationManager.MutationState> states = mutationManager.getMutationStates(className, name);
 
-            logger.info("Checking method: " + className + "." + name + " - found " + states.size() + " mutation(s)");
+            System.out.println("Checking method: " + className + "." + name + " - found " + states.size() + " mutation(s)");
 
             // Apply all matching mutations (chain them)
             for (MutationManager.MutationState state : states) {
                 if (state.isActive()) {
-                    logger.info("Applying mutation to method: " + className + "." + name);
+                    System.out.println("Applying mutation to method: " + className + "." + name);
 
                     MutationConfig.MutationRule rule = state.getRule();
-                    logger.info("Mutation type: " + rule.type + ", mutation config: " + rule.mutation);
+                    System.out.println("Mutation type: " + rule.type + ", mutation config: " + rule.mutation);
 
                     // Apply appropriate mutator based on type
                     if ("constant".equals(rule.type) || "string".equals(rule.type)) {
@@ -117,7 +115,7 @@ public class MutatorTransformer implements ClassFileTransformer {
                         mv = new io.chaosmesh.mutator.transformer.ConstantMutator(Opcodes.ASM9, mv, mutationType, from, to);
                     } else if ("operator".equals(rule.type)) {
                         String mutationType = (String) rule.mutation.getOrDefault("strategy", "add_to_sub");
-                        logger.info("Operator mutation type: " + mutationType);
+                        System.out.println("Operator mutation type: " + mutationType);
                         mv = new io.chaosmesh.mutator.transformer.OperatorMutator(Opcodes.ASM9, mv, mutationType);
                     } else if ("return".equals(rule.type)) {
                         String mutationType = (String) rule.mutation.getOrDefault("strategy", "null");
